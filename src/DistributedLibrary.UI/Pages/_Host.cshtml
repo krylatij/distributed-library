@@ -1,0 +1,9 @@
+﻿@page "/"
+@namespace DistributedLibrary.UI.Pages
+@using DistributedLibrary.UI;
+@addTagHelper *, Microsoft.AspNetCore.Mvc.TagHelpers
+@{
+    Layout = "_Layout";
+}
+
+<component type="typeof(App)" render-mode="ServerPrerendered" />
