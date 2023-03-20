@@ -15,4 +15,4 @@ steps:
 
 - task: MSBuild@1
   inputs:
-    solution: 'src/DistributedLibrary.sln'
+    solution: 'src/DistributedLibrary.Database/DistributedLibrary.Database.sqlproj'
