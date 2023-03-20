@@ -7,7 +7,7 @@ trigger:
 - master
 
 pool:
-  vmImage: ubuntu-latest
+  vmImage: windows-latest
 
 steps:
 - script: echo Hello, world!
@@ -15,4 +15,4 @@ steps:
 
 - task: MSBuild@1
   inputs:
-    solution: 'src/DistributedLibrary.Database/DistributedLibrary.Database.sqlproj'
+    solution: 'src/DistributedLibrary.sln'
