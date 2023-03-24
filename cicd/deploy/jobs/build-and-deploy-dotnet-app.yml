@@ -1,0 +1,204 @@
+parameters:
+  - name: application
+    type: string  
+  - name: project_path
+    type: string
+  - name: data_project_path
+    type: string
+  - name: startup_project_path
+    type: string
+  - name: test_project_path
+    type: string
+  - name: app_settings
+    type: string
+  - name: ef_migrations_connection_string
+    type: string
+  - name: nuget_packages_directory
+    type: string
+
+  - name: run_tests
+    type: boolean
+  - name: deploy
+    type: boolean
+   
+  - name: service_connection
+    type: string
+  - name: web_app_name
+    type: string
+
+  - name: dependsOn
+    type: string
+
+  - name: dotnet_sdk
+    type: string   
+
+  - name: runtime_stack
+    type: string
+    default: "DOTNETCORE|7.0"
+  - name: configuration
+    type: string
+    default: "Release"
+
+jobs:
+  - job: build_and_deploy
+    dependsOn: ${{ parameters.dependsOn }}
+    displayName: "Build & Deploy (${{ parameters.application }})"
+    variables: 
+      application_zipped: $(System.DefaultWorkingDirectory)/Publish/${{ variables.application }}
+      ef_migrations_bundle_name: "efbundle-${{ parameters.application }}"
+
+    steps:    
+    - task: UseDotNet@2
+      displayName: use .NET ${{ parameters.dotnet_sdk }}
+      inputs:
+        packageType: "sdk"
+        version: ${{ parameters.dotnet_sdk }}
+
+    - task: DotNetCoreCLI@2
+      displayName: dotnet restore
+      continueOnError: false
+      condition: succeeded()
+      inputs:
+        command: restore
+        projects: ${{ parameters.project_path }}
+        verbosityRestore: normal    
+        packagesDirectory: ${{ parameters.nuget_packages_directory }}
+
+    - task: DotNetCoreCLI@2
+      continueOnError: false
+      inputs:
+        command: build
+        projects: ${{ parameters.project_path }}  
+        arguments: --no-restore
+        packagesDirectory: ${{ parameters.nuget_packages_directory }}
+      displayName: dotnet build
+
+    - task: DotNetCoreCLI@2
+      continueOnError: false
+      condition: ${{ eq(parameters.run_tests, true) }}
+      inputs:
+        command: test
+        projects: ${{ parameters.test_project_path }}   
+        packagesDirectory: ${{ parameters.nuget_packages_directory }}
+        publishTestResults: true
+      displayName: dotnet test
+
+    - task: Bash@3
+      continueOnError: false
+      condition: ${{ ne(parameters.ef_migrations_connection_string, '') }}
+      inputs:
+        targetType: 'inline'          
+        script: |
+          dotnet tool install dotnet-ef --global
+      displayName: install dotnet-ef
+
+    - task: Bash@3        
+      continueOnError: false
+      condition: ${{ ne(parameters.ef_migrations_connection_string, '') }}
+      inputs:
+        targetType: 'inline'       
+        script: |
+          dotnet ef migrations bundle \
+          --project ${{ parameters.data_project_path }} \
+          --startup-project ${{ parameters.startup_project_path }} \
+          --output ${{ variables.ef_migrations_bundle_name }} \
+          --configuration github.com.dotnet.efcore.issues.25555 --self-contained --force
+      displayName: build EF migration bundle
+
+    - task: Bash@3
+      continueOnError: false
+      condition: ${{ ne(parameters.ef_migrations_connection_string, '') }}
+      inputs:
+        targetType: 'inline'         
+        script: |
+          export DOTNET_SYSTEM_GLOBALIZATION_INVARIANT=1
+          chmod +x ./${{ variables.ef_migrations_bundle_name }}
+          ./${{ variables.ef_migrations_bundle_name }} --connection '${{ parameters.ef_migrations_connection_string }}'
+      displayName: apply EF migrations
+
+    - task: DotNetCoreCLI@2
+      displayName: 'dotnet publish'
+      inputs:
+        command: 'publish'
+        publishWebProjects: false
+        projects: ${{ parameters.project_path }}               
+        arguments: --no-restore --configuration=${{ parameters.configuration }} --output ${{ variables.application_zipped }}
+        packagesDirectory: ${{ parameters.nuget_packages_directory }}
+        zipAfterPublish: true
+  
+    - task: AzureRmWebAppDeployment@4
+      displayName: deploy to Azure
+      condition: ${{ eq(parameters.deploy, true) }}
+      inputs:
+        ConnectionType: 'AzureRM'
+        azureSubscription: ${{ parameters.service_connection }}
+        appType: 'webAppLinux'
+        WebAppName: ${{ parameters.web_app_name }}
+        packageForLinux: '${{ variables.application_zipped }}/*.zip'
+        RuntimeStack: ${{ parameters.runtime_stack }}
+        AppSettings: ${{ parameters.app_settings }}
+
+  # - job: ef_migrations
+  #   displayName: "Apply EF migrations (${{ parameters.application }})"
+  #   condition: ${{ ne(parameters.ef_migrations_connection_string, '') }}
+  #   dependsOn: build
+  #   variables:
+  #     - name: ef_migrations_bundle_name
+  #       value: "efbundle-${{ parameters.application }}"
+  #   steps:            
+  #     - task: Bash@3
+  #       continueOnError: false
+  #       inputs:
+  #         targetType: 'inline'          
+  #         script: |
+  #           dotnet tool install dotnet-ef --global
+  #       displayName: Install dotnet-ef
+
+  #     - task: Bash@3        
+  #       continueOnError: false    
+  #       inputs:
+  #         targetType: 'inline'       
+  #         script: |
+  #           dotnet ef migrations bundle \
+  #           --project ${{ parameters.data_project_path }} \
+  #           --startup-project ${{ parameters.startup_project_path }} \
+  #           --output ${{ variables.ef_migrations_bundle_name }} \
+  #           --configuration github.com.dotnet.efcore.issues.25555 --self-contained --force
+  #       displayName: Build EF migration bundle
+
+  #     - task: Bash@3
+  #       continueOnError: false
+  #       inputs:
+  #         targetType: 'inline'         
+  #         script: |
+  #           export DOTNET_SYSTEM_GLOBALIZATION_INVARIANT=1
+  #           chmod +x ./${{ variables.ef_migrations_bundle_name }}
+  #           ./${{ variables.ef_migrations_bundle_name }} --connection '${{ parameters.ef_migrations_connection_string }}'
+  #       displayName: Apply EF migrations
+
+  # - job: deploy
+  #   displayName: "Deploy web app (${{ parameters.application }})"
+  #   dependsOn: build
+  #   variables: 
+  #     application_zipped: $(System.DefaultWorkingDirectory)/Publish/${{ variables.application }}
+  #   steps:  
+  #     - task: DotNetCoreCLI@2
+  #       displayName: 'dotnet publish'
+  #       inputs:
+  #         command: 'publish'
+  #         publishWebProjects: false
+  #         projects: ${{ variables.project_path }}               
+  #         arguments: --no-restore --configuration=${{ parameters.configuration }} --output ${{ variables.application_zipped }}
+  #         packagesDirectory: ${{ variables.nuget_packages_directory }}
+  #         zipAfterPublish: true
+    
+  #     - task: AzureRmWebAppDeployment@4
+  #       displayName: deploy to Azure
+  #       inputs:
+  #         ConnectionType: 'AzureRM'
+  #         azureSubscription: ${{ parameters.service_connection }}
+  #         appType: 'webAppLinux'
+  #         WebAppName: ${{ parameters.web_app_name }}
+  #         packageForLinux: '${{ variables.application_zipped }}/*.zip'
+  #         RuntimeStack: ${{ parameters.runtime_stack }}
+  #         AppSettings: ${{ parameters.app_settings }}

@@ -1,11 +1,12 @@
 ﻿using System;
 using System.Collections.Generic;
 using DistributedLibrary.Data.Entities;
+using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
 
 namespace DistributedLibrary.Data;
 
-public partial class DistributedLibraryContext : DbContext
+public partial class DistributedLibraryContext : IdentityDbContext<User>
 {
     public DistributedLibraryContext()
     {
@@ -26,6 +27,8 @@ public partial class DistributedLibraryContext : DbContext
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
+        base.OnModelCreating(modelBuilder);
+
         modelBuilder.Entity<BookEntity>(entity =>
         {
             entity.ToTable("Book");
@@ -95,30 +98,6 @@ public partial class DistributedLibraryContext : DbContext
                 .HasForeignKey(d => d.UserId)
                 .OnDelete(DeleteBehavior.ClientSetNull)
                 .HasConstraintName("FK_Loan_User");
-        });
-
-        modelBuilder.Entity<User>(entity =>
-        {
-            entity.ToTable("User");
-
-            entity.Property(e => e.UserId);
-
-            entity.HasKey(x => x.UserId);
-            entity.Property(e => e.Address)
-                .HasMaxLength(100)
-                .IsFixedLength();
-            entity.Property(e => e.City)
-                .HasMaxLength(100)
-                .IsFixedLength();
-            entity.Property(e => e.Email)
-                .HasMaxLength(100)
-                .IsFixedLength();
-            entity.Property(e => e.Name)
-                .HasMaxLength(100)
-                .IsFixedLength();
-            entity.Property(e => e.Phone)
-                .HasMaxLength(100)
-                .IsFixedLength();
         });
 
         OnModelCreatingPartial(modelBuilder);

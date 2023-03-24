@@ -1,0 +1,8 @@
+﻿@page "/books/{BookId}"
+
+<BookComponent BookId="int.Parse(BookId)"></BookComponent>
+
+@code {
+    [Parameter]
+    public string BookId { get; set; }
+}

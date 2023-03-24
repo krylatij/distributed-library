@@ -1,0 +1,50 @@
+parameters:
+  - name: project_name
+    type: string
+
+  - name: service_connection
+    type: string
+
+  - name: dependsOn
+    type: string
+
+  - name: databaseServer
+    type: string
+
+  - name: databaseName
+    type: string
+
+  - name: databaseUser
+    type: string
+
+  - name: databasePassword
+    type: string
+ 
+
+  - name: configuration
+    type: string
+    default: "Release"
+
+
+jobs:
+  - job: build_and_deploy_dacpac
+    dependsOn: ${{ parameters.dependsOn }}
+    displayName: "Build & Deploy (${{ parameters.project_name }})"    
+    pool: 
+      vmImage: windows-latest
+
+    steps:
+    - task: MSBuild@1
+      inputs:
+        solution: 'src/${{ parameters.project_name }}/${{ parameters.project_name }}.sqlproj'
+        configuration: ${{ parameters.configuration }}
+
+    - task: SqlAzureDacpacDeployment@1
+      displayName: Deploy dacpac
+      inputs:
+        azureSubscription: ${{ parameters.service_connection }}
+        ServerName: ${{ parameters.databaseServer }}
+        DatabaseName: ${{ parameters.databaseName }}
+        SqlUsername: ${{ parameters.databaseUser }}
+        SqlPassword: ${{ parameters.databasePassword }}
+        DacpacFile: '$(Build.SourcesDirectory)/src/${{ parameters.project_name }}/bin/${{ parameters.configuration }}/${{ parameters.project_name }}.dacpac'

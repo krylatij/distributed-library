@@ -19,9 +19,9 @@ public partial class BookEntity
 
     public int? PageCount { get; set; }
 
-    public Guid? ContributorId { get; set; }
+    public string? ContributorId { get; set; }
 
-    public Guid? HolderId { get; set; }
+    public string? HolderId { get; set; }
 
     public virtual ICollection<BookTagEntity> BookTags { get; } = new List<BookTagEntity>();
 

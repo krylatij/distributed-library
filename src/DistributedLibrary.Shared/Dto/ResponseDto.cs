@@ -25,6 +25,13 @@ public class ResponseDto<T>
         ResponseState = responseState;
     }
 
+    public ResponseDto(T result, ResponseState responseState, string message)
+    {
+        Result = result;
+        ResponseState = responseState;
+        Messages = new List<string> {message};
+    }
+
     public T Result { get; set; } = default!;
 
     public List<string> Messages { get; set; } = default!;
@@ -38,9 +45,8 @@ public class ResponseDto<T>
         Messages.Add(message);
     }
 
-    public void SetMessages(IEnumerable<string> messages)
+    public string GetMessage()
     {
-        Messages ??= new List<string>();
-        Messages.AddRange(messages);
+        return string.Join(Environment.NewLine, Messages);
     }
 }

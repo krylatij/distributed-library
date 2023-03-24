@@ -1,0 +1,22 @@
+﻿@using DistributedLibrary.Data.Entities
+@using DocumentFormat.OpenXml.Drawing.Charts
+@using GridBlazor
+@using GridShared.Columns
+@implements ICustomGridComponent<BookEntity>
+@inject NavigationManager NavigationManager
+
+<a href="" @onclick="@DeleteItem" @onclick:preventDefault>🗙</a>
+
+@code {
+    [Parameter]
+    public BookEntity Item { get; set; }
+
+    [Parameter]
+    public CGrid<BookEntity> Grid { get; set; }
+    
+
+    private void DeleteItem(MouseEventArgs e)
+    {
+        NavigationManager.NavigateTo($"/books/{Item.BookId}/delete/");
+    } 
+}

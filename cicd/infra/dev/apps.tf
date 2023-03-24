@@ -21,8 +21,12 @@ resource "azurerm_linux_web_app" "this" {
         #docker_image     
     }
   }
-
-  app_settings = local.app_environment_vars
   
   tags = local.default_tags
+
+  lifecycle {
+    ignore_changes = [
+      app_settings
+    ]
+  }
 }

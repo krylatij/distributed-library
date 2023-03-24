@@ -1,0 +1,64 @@
+﻿@page "/books"
+
+<h3>All books</h3>
+
+
+@using GridBlazor.Pages
+@using Microsoft.Extensions.Primitives
+
+@using GridShared.Sorting
+@using GridShared.Utility
+@using Microsoft.AspNetCore.Components
+@using GridBlazor
+@using GridShared
+@using DistributedLibrary.Services.Dto
+@using DistributedLibrary.Services.Services
+@using DistributedLibrary.Data.Entities
+@inject LibraryService libraryService
+@inject NavigationManager NavigationManager
+
+@if (_task.IsCompleted)
+{
+    <button class='btn btn-sm btn-primary' @onclick="AddBook">Add new</button>
+   
+    <GridComponent T="BookEntity" Grid="@_grid"></GridComponent>
+}
+else
+{
+    <p><em>Loading...</em></p>
+}
+
+@code
+{
+    private CGrid<BookEntity> _grid;
+    private Task _task;
+
+    protected override async Task OnParametersSetAsync()
+    {
+        Action<IGridColumnCollection<BookEntity>> columns = c =>
+        {
+            c.Add(o => o.BookId).Titled("Id").Sortable(true, GridSortMode.TwoState);
+            c.Add(o => o.Title).Filterable(true).RenderComponentAs<BookEditRedirectComponent>();
+            c.Add(o => o.Isbn).Filterable(true);
+            c.Add(o => o.Author).Sortable(true);
+            c.Add(o => o.Contributor.UserName).Titled("Contributor").Sortable(true);
+            c.Add().RenderComponentAs<BookDeleteRedirectComponent>();
+        };
+
+        var query = new QueryDictionary<StringValues>();
+       //query.Add("grid-page", "2");
+
+
+        var client = new GridClient<BookEntity>(q => libraryService.GetBooksAsync(columns, q), query, false, "booksGrid2", columns);
+        _grid = client.Grid;
+    // Set new items to grid
+        _task = client.UpdateGrid();
+        
+        await _task;
+    }
+
+    private void AddBook()
+    {
+        NavigationManager.NavigateTo("/books/add");
+    }
+}

@@ -1,0 +1,61 @@
+﻿@page "/books/{BookId:int}/delete/"
+@using DistributedLibrary.UI.Auth
+@using DistributedLibrary.Services.Services
+@using DistributedLibrary.Services.Dto
+@using DocumentFormat.OpenXml.Drawing.Charts
+@using Microsoft.CodeAnalysis.FlowAnalysis
+
+@inject UserInfoProvider _userInfoProvider
+@inject NavigationManager NavigationManager
+@inject LibraryService _libraryService
+@attribute [Authorize]
+
+@if (_book == null)
+{
+    <p>There is no book with id @BookId.</p>
+}
+else
+{
+    <div class="form-horizontal">
+        <div class="form-group">
+            <div class="col-md-5">Do you really want to delete book '@_book.Title'?</div>
+        </div>
+
+        <div class="form-group">
+            <div class="col-md-5">
+
+                <button type="submit" class="btn btn-primary btn-md" @onclick="DeleteAsync">Delete</button>
+                <button type="button" class="btn btn-primary btn-md" @onclick="Back">Cancel</button>
+            </div>
+        </div>
+    </div>
+}
+
+
+@code {
+    private BookDto? _book;
+
+    [Parameter]
+    public int BookId { get; set; }
+
+    [Parameter]
+    public string Title { get; set; }
+
+
+    protected override async Task OnParametersSetAsync()    
+    {
+        _book = (await _libraryService.GetBookAsync(BookId)).Result;
+    }
+
+    private async Task DeleteAsync()
+    {
+        await _libraryService.DeleteBookAsync(BookId);
+        Back();
+    }
+
+
+    private void Back()
+    {
+        NavigationManager.NavigateTo("/books/");
+    }
+}

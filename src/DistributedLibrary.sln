@@ -3,13 +3,13 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 17
 VisualStudioVersion = 17.4.33110.190
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DistributedLibrary.UI", "DistributedLibrary.UI\DistributedLibrary.UI.csproj", "{09598F44-2296-4C1E-8A06-CACFB6610724}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "DistributedLibrary.UI", "DistributedLibrary.UI\DistributedLibrary.UI.csproj", "{09598F44-2296-4C1E-8A06-CACFB6610724}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DistributedLibrary.Services", "DistributedLibrary.Services\DistributedLibrary.Services.csproj", "{1774898E-1114-45F3-BC11-71814B23E6B0}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "DistributedLibrary.Services", "DistributedLibrary.Services\DistributedLibrary.Services.csproj", "{1774898E-1114-45F3-BC11-71814B23E6B0}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DistributedLibrary.Data", "DistributedLibrary.Data\DistributedLibrary.Data.csproj", "{7D877F57-38C0-4509-9B72-4229C75104DB}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "DistributedLibrary.Data", "DistributedLibrary.Data\DistributedLibrary.Data.csproj", "{7D877F57-38C0-4509-9B72-4229C75104DB}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DistributedLibrary.UnitTests", "DistributedLibrary.UnitTests\DistributedLibrary.UnitTests.csproj", "{E89FD903-B08A-412F-AA97-88D85D5FB330}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "DistributedLibrary.UnitTests", "DistributedLibrary.UnitTests\DistributedLibrary.UnitTests.csproj", "{E89FD903-B08A-412F-AA97-88D85D5FB330}"
 EndProject
 Project("{00D1A9C2-B5F0-4AF3-8072-F6C62B433612}") = "DistributedLibrary.Database", "DistributedLibrary.Database\DistributedLibrary.Database.sqlproj", "{F5CFF8C2-22C1-497F-AF68-19461B99F3B5}"
 EndProject
@@ -17,7 +17,7 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "tests", "tests", "{959E5B29
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "database", "database", "{5B932160-2963-4045-AF55-63B52839E05D}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DistributedLibrary.Shared", "DistributedLibrary.Shared\DistributedLibrary.Shared.csproj", "{3684ABE5-CDB2-4616-A8B6-22850ED168A3}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "DistributedLibrary.Shared", "DistributedLibrary.Shared\DistributedLibrary.Shared.csproj", "{3684ABE5-CDB2-4616-A8B6-22850ED168A3}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

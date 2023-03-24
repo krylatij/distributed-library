@@ -1,0 +1,153 @@
+﻿@using DistributedLibrary.Services.Dto
+@using DistributedLibrary.Services.Services
+@using DistributedLibrary.Shared.Dto
+@using DistributedLibrary.Shared.Enums
+@using DistributedLibrary.UI.Auth
+
+@inject UserInfoProvider _userInfoProvider
+@inject NavigationManager NavigationManager
+@inject LibraryService _libraryService
+@attribute [Authorize]
+
+<h3>BookDetails</h3>
+
+@if (_book == null)
+{
+    <p>Book with id @BookId was not found.</p>
+}
+else
+{
+    <EditForm Model="@_book" OnValidSubmit="@SaveBookAsync">
+        <DataAnnotationsValidator />
+        <ValidationSummary />
+        
+        @if (_message != null)
+        {
+            <ul class="validation-errors">
+                <li class="validation-message">@_message</li>
+            </ul>
+        }
+       
+        <div class="form-horizontal">
+            <div class="form-group">
+                <label for="Title" class="control-label col-md-4">Title: </label>
+                <div class="col-md-5">
+                    <InputText id="BookTitle" class="form-control" @bind-Value="_book.Title" />
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label for="Author" class="control-label col-md-2">Author: </label>
+                <div class="col-md-5">
+                    <InputText id="Author" class="form-control" @bind-Value="_book.Author" />
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label for="ISBN" class="control-label col-md-2">ISBN: </label>
+                <div class="col-md-5">
+                    <InputText id="ISBN" class="form-control" @bind-Value="_book.Isbn" />
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label for="PublishDate" class="control-label col-md-2">PublishDate: </label>
+                <div class="col-md-5">
+                    <InputDate id="PublishDate" class="form-control" @bind-Value="_book.PublicationDate" />
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label for="Publisher" class="control-label col-md-2">Publisher: </label>
+                <div class="col-md-5">
+                    <InputText id="Publisher" class="form-control" @bind-Value="_book.Publisher" />
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label for="PageCount" class="control-label col-md-2">Page Count: </label>
+                <div class="col-md-5">
+                    <InputNumber id="PageCount" class="form-control" @bind-Value="_book.PageCount" />
+                </div>
+            </div>
+
+            <div class="form-group">
+                <div class="col-md-5">
+
+                    <button type="submit" class="btn btn-primary btn-md">Save</button>
+                    <button type="button" class="btn btn-primary btn-md" @onclick="Back">Back</button>
+                </div>
+            </div>
+        </div>
+    </EditForm>
+}
+
+
+@code {
+
+    private BookDto? _book = new();
+
+    private string? _message;
+
+    [Parameter]
+    public int? BookId { get; set; }
+
+    protected override async Task OnParametersSetAsync()
+    {
+        if (BookId == null)
+        {
+            return;
+        }
+
+        var response = await _libraryService.GetBookAsync(BookId.Value);
+
+        if (response.ResponseState == ResponseState.Ok)
+        {
+            _message = null;
+            if (response.Result == null)
+            {
+                _message = $"Book was not found by id {BookId}";
+            }
+        }
+        else
+        {
+           ProcessResponse(response);
+        }
+    }
+
+    public async Task SaveBookAsync()
+    {
+        var userId = await _userInfoProvider.GetUserIdAsync();
+
+        var response = await _libraryService.UpsertBookAsync(_book, userId);
+
+        if (response.ResponseState == ResponseState.Ok)
+        {
+            
+            NavigationManager.NavigateTo($"/books", false, false);
+        }
+        else
+        {
+            ProcessResponse(response);
+        }
+    }
+
+    private void ProcessResponse(ResponseDto<BookDto> response)
+    {
+        if (response.ResponseState != ResponseState.Ok)
+        {
+            _message = response.GetMessage();
+        }
+        else
+        {
+            _book = response.Result;
+            _message = null;
+        }
+    }
+    
+
+    private void Back()
+    {
+        NavigationManager.NavigateTo($"/books", false, false);
+    }
+}

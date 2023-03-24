@@ -8,11 +8,8 @@ namespace DistributedLibrary.Shared.Enums;
 
 public enum ResponseState
 {
-    Success = 0,
-    AlreadyExist = 1,
-    Created = 2,
-    NotFound = 3,
-    ValidationFailed = 4,
-    Error = 5
+    Ok = 0,
+    ValidationFailed = 1,
+    Error = 2
 
 }

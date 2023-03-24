@@ -1,0 +1,217 @@
+trigger:
+  branches:
+    include:
+      - main
+  paths:
+    include:
+      - src
+    exclude:
+      - cicd/infra/*
+
+pool:
+  vmImage: ubuntu-latest
+
+parameters:
+  - name: dotnet_sdk
+    type: string
+    default: "7.0.x"
+
+  - name: deploy_db
+    type: boolean
+    default: false
+    displayName: Deploy database
+
+  - name: deploy_ui
+    type: boolean
+    default: true
+    displayName: Deploy UI
+
+  - name: run_tests
+    type: boolean
+    default: true
+    displayName: Run Tests
+
+  - name: configuration
+    type: string
+    default: "Release"
+
+variables:
+  - group: shared_variables
+  - group: dev_variables
+  - group: dev_manual_variables
+  - name: project
+    value: distributed-library
+  - name: project_main_git_branch
+    value: "refs/heads/master"
+
+  
+jobs:
+  - job: initjob
+    displayName: Initialize
+    continueOnError: false
+    workspace:
+      clean: outputs
+
+    steps:
+      - checkout: self
+        clean: true
+        submodules: true
+
+  - ${{ if eq(parameters.deploy_db, true) }}:
+    - template: ./jobs/build-and-deploy-dacpac.yml     
+      parameters:
+        dependsOn: initjob
+        project_name: 'DistributedLibrary.Database'     
+        service_connection: $(__service_endpoint_name)    
+        configuration: ${{ parameters.configuration }}
+        databaseServer: $(__mssql_0_server_name)
+        databaseName: $(__mssql_backend_database_name)
+        databaseUser: $(__mssql_0_admin_username)
+        databasePassword: $(__mssql_0_admin_password)
+
+
+  - template: ./jobs/build-and-deploy-dotnet-app.yml
+    parameters:
+      dependsOn: initjob
+      application: ${{ variables.project }}-ui
+      project_path: src/DistributedLibrary.UI/DistributedLibrary.UI.csproj
+      data_project_path: src/DistributedLibrary.Data/DistributedLibrary.Data.csproj
+      startup_project_path: src/DistributedLibrary.UI/DistributedLibrary.UIcsproj
+      test_project_path: src/DistributedLibrary.UnitTests/DistributedLibrary.UnitTests.csproj
+      nuget_packages_directory: $(Pipeline.Workspace)/Nuget/packages
+      app_settings: >-
+          -ASPNETCORE_ENVIRONMENT "$(__dotnet_environment)"
+          -DOTNET_ENVIRONMENT "$(__dotnet_environment)"
+          -DatabaseConfiguration__ConnectionString "$(__mssql_backend_connection_string)"
+          -RedisConfiguration__ConnectionString "<not set>"
+          -ApplicationInsightsConfiguration__ConnectionString "$(__appinsights_connection_string)"
+          -NotificationsConfiguration__ConnectionString "$(__communication_service_connection_string)"
+          -Authentication__Google__ClientId "$(GoogleClientId)"
+          -Authentication__Google__ClientSecret "$(GoogleClientSecret)"
+      ef_migrations_connection_string: ''
+      service_connection: $(__service_endpoint_name)
+      web_app_name: $(__webapp_ui)
+      dotnet_sdk: ${{ parameters.dotnet_sdk }}
+      configuration: ${{ parameters.configuration }}
+      run_tests: ${{ parameters.run_tests }}
+      deploy: ${{ parameters.deploy_ui }}
+
+      
+
+    #   - task: DotNetCoreCLI@2
+    #     displayName: Restore nuget packages
+    #     condition: succeeded()
+    #     inputs:
+    #       command: restore
+    #       projects: ${{ variables.project_path }}
+    #       verbosityRestore: normal    
+    #       packagesDirectory: $(Pipeline.Workspace)/Nuget/packages
+
+    #   - task: DotNetCoreCLI@2
+    #     continueOnError: false
+    #     inputs:
+    #       command: build
+    #       projects: ${{ variables.project_path }}
+  
+    #       packagesDirectory: $(Pipeline.Workspace)/Nuget/packages
+    #     displayName: dotnet Build
+
+    #   - task: Bash@3
+    #     continueOnError: false
+    #     inputs:
+    #       targetType: 'inline'          
+    #       script: |
+    #         dotnet tool install dotnet-ef --global
+    #     displayName: Install dotnet-ef
+
+    #   - task: Bash@3
+    #     continueOnError: false
+    #     inputs:
+    #       targetType: 'inline'       
+    #       script: |
+    #         dotnet ef migrations bundle \
+    #         --project ${{ variables.data_project_path }} \
+    #         --startup-project ${{ variables.startup_project_path }} \
+    #         --output ${{ variables.ef_migrations_bundle_name }} \
+    #         --configuration github.com.dotnet.efcore.issues.25555 --self-contained --force
+    #     displayName: Build migration bundle
+
+    #   - task: Bash@3
+    #     displayName: "Apply EF migration"
+    #     continueOnError: false
+    #     inputs:
+    #       targetType: 'inline'         
+    #       script: |
+    #         export DOTNET_SYSTEM_GLOBALIZATION_INVARIANT=1
+    #         chmod +x ./${{ variables.ef_migrations_bundle_name }}
+    #         ./${{ variables.ef_migrations_bundle_name }} --connection '$(__api_connection_string)'
+    #     displayName: "Apply migrations"
+     
+    #   - task: DotNetCoreCLI@2
+    #     displayName: 'Publish'
+    #     inputs:
+    #       command: 'publish'
+    #       publishWebProjects: false
+    #       projects: ${{ variables.project_path }}               
+    #       arguments: --no-restore --configuration=${{ parameters.configuration }} --output ${{ variables.application_zipped }}
+    #       packagesDirectory: $(Pipeline.Workspace)/Nuget/packages
+    #       zipAfterPublish: true
+
+    #  # - bash: |
+    # #    echo  ${{ variables.application_zipped }}
+        
+    #   - task: AzureRmWebAppDeployment@4
+    #     inputs:
+    #       ConnectionType: 'AzureRM'
+    #       azureSubscription: $(__service_endpoint_name)
+    #       appType: 'webAppLinux'
+    #       WebAppName: $(__webapp_api)
+    #       packageForLinux: '${{ variables.application_zipped }}/*.zip'
+    #       RuntimeStack: 'DOTNETCORE|6.0'
+    #       AppSettings: ${{ variables.app_settings }}
+
+
+
+
+
+
+  # - job: deployjob
+  #   displayName: Deploy
+  #   continueOnError: false
+  #   dependsOn: buildjob
+
+  #   steps:
+  #     - task: AzureRmWebAppDeployment@4
+  #       inputs:
+  #         ConnectionType: 'AzureRM'
+  #         azureSubscription: 'conference-manager-dev'
+  #         appType: 'webAppLinux'
+  #         WebAppName: 'asp-dev-conference-manager'
+  #         packageForLinux: 'application_zipped'
+
+
+    # - task: DotNetCoreCLI@2
+    #   continueOnError: false
+    #   condition: and (succeeded(), ${{ parameters.enable_tests }})
+    #   inputs:
+    #     command: "test"
+    #     testRunTitle: ${{ parameters.test_run_title }}
+    #     projects: ${{ parameters.src_code_wd }}/${{ parameters.relative_test_path }}
+    #     arguments: ${{ parameters.dotnet_test_arguments }}
+    #     publishTestResults: true
+    #   displayName: "${{ parameters.display_name }} ${{ parameters.project_name }}"
+
+# - stage: Deploy
+#   condition: and(succeeded(), eq(variables['Build.SourceBranch'], '${{ variables.project_main_git_branch }}'))
+#   jobs:
+#     - template: templates/jobs/deploy-pipeline.yml@templates
+#       parameters:
+#         project_name: ${{ variables.application }}
+#         ef_migrations_bundle_artifact: ${{ variables.ef_migrations_bundle_artifact }}
+#         connection_string_ssm_parameters: ${{ parameters.connection_string_ssm_parameters }}
+#         deploy_target_git_folder: $(deploy_target_git_folder)
+#         deploy_stage: ${{ or(parameters.deploy_prod, parameters.deploy_stage) }}
+#         deploy_prod: ${{ parameters.deploy_prod }}
+#         approve_users:
+#           stage: Snickers
+#           prod: Snickers

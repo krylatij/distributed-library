@@ -365,3 +365,4 @@ FodyWeavers.xsd
 **/.terraform/
 terraform.tfstate.backup
 terraform.tfstate
+/src/DistributedLibrary.Database/DistributedLibrary.Database.publish.xml
