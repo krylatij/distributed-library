@@ -3,12 +3,13 @@ using DistributedLibrary.Data.Entities;
 using DistributedLibrary.Services;
 using DistributedLibrary.Shared.Configuration;
 using DistributedLibrary.UI.Auth;
+using DistributedLibrary.UI.Middlewares;
+using Microsoft.AspNetCore.SignalR;
 
 
 var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddDefaultIdentity<User>(options => options.SignIn.RequireConfirmedAccount = true).AddEntityFrameworkStores<DistributedLibraryContext>();
-
 
 builder.Services.AddHttpClient();
 builder.Services.AddScoped<TokenProvider>();
@@ -34,11 +35,13 @@ builder.Services.AddAuthentication().AddGoogle(googleOptions =>
 
 // Add services to the container.
 builder.Services.AddRazorPages();
-builder.Services.AddServerSideBlazor();
+builder.Services.AddServerSideBlazor().AddHubOptions(x => x.AddFilter(typeof(ExceptionHandlingSignalRFilter)));
 
 
 builder.Services.Configure<DatabaseConfiguration>(builder.Configuration.GetSection(DatabaseConfiguration.SectionName));
 builder.Services.Configure<ApplicationInsightsConfiguration>(builder.Configuration.GetSection(ApplicationInsightsConfiguration.SectionName));
+builder.Services.Configure<CommunicationServiceConfiguration>(builder.Configuration.GetSection(CommunicationServiceConfiguration.SectionName));
+builder.Services.Configure<ApplicationConfiguration>(builder.Configuration.GetSection(ApplicationConfiguration.SectionName));
 
 builder.Logging.AddApplicationInsights(
     configureTelemetryConfiguration: (config) =>

@@ -1,0 +1,131 @@
+﻿@page "/books/{BookId:int}/reserve"
+@using DistributedLibrary.UI.Auth
+@using DistributedLibrary.Services.Dto
+@using DistributedLibrary.Services.Services
+@using DistributedLibrary.Shared.Dto
+@using DistributedLibrary.Shared.Enums
+@inject UserInfoProvider _userInfoProvider
+@inject NavigationManager NavigationManager
+@inject LibraryService _libraryService
+@attribute [Authorize]
+
+<h3>Reserve the book for a friend.</h3>
+
+
+@if (_bookDto == null)
+{
+    <p>There is no book with id '@BookId'.</p>
+}
+else
+{
+    <h3>Do you want to reserve '@_bookDto.Title' for someone else?</h3>
+    <EditForm Model="@_reservation" OnValidSubmit="@SaveReservationAsync">
+        <DataAnnotationsValidator />
+        <ValidationSummary />
+
+        @if (_message != null)
+        {
+            <ul class="validation-errors">
+                <li class="validation-message">@_message</li>
+            </ul>
+        }
+
+        <div class="form-horizontal">
+            <div class="form-group">
+                <label for="Title" class="control-label col-md-4">Book: </label>
+                <div class="col-md-5">
+                    <span>@_bookDto.Title</span>
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label for="UserId" class="control-label col-md-2">User: </label>
+                <select id="UserId" name="UserId" class="form-control" @bind="_reservation.UserId">
+                    @foreach (var selectItem in _users)
+                    {
+                        if (selectItem.Id == _userId)
+                        {
+                            continue;
+                        }
+                        <option value="@selectItem.Id">@selectItem.UserName</option>
+                    }
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label for="ReservationDate" class="control-label col-md-2">ReservationDate Date: </label>
+                <div class="col-md-5">
+                    <InputDate id="ReservationDate" class="form-control" @bind-Value="_reservation.ReservationDate" />
+                </div>
+            </div>
+
+            <div class="form-group">
+                <div class="col-md-5">
+                    <input type="hidden" name="BookId" id="BookId" value="@_reservation.BookId"/>
+                    <button type="submit" class="btn btn-primary btn-md">Save</button>
+                    <button type="button" class="btn btn-primary btn-md" @onclick="Back">Back</button>
+                </div>
+            </div>
+        </div>
+    </EditForm>
+}
+
+
+
+@code {
+    private string? _userId;
+    private string? _message;
+
+    private ReservationDto _reservation;
+    private UserDto[] _users;
+    private BookDto? _bookDto;
+
+    [Parameter]
+    public int BookId { get; set; }
+
+    protected override async Task OnParametersSetAsync()
+    {
+        _userId = await _userInfoProvider.GetUserIdAsync();
+
+        var response = await _libraryService.GetBookAsync(BookId);
+
+        ProcessResponse(response);
+
+        if (_bookDto == null)
+        {
+            return;
+        }
+
+        _users = await _libraryService.GetUsersAsync();
+
+        _reservation = new ReservationDto
+        {
+            BookId = BookId,
+            ReservationDate = DateTime.Now.AddDays(2)
+        };
+    }
+
+    private void ProcessResponse(ResponseDto<BookDto> response)
+    {
+        if (response.ResponseState != ResponseState.Ok)
+        {
+            _message = response.GetMessage();
+            _bookDto = null;
+        }
+        else
+        {
+            _message = null;
+            _bookDto = response.Result;
+        }
+    }
+
+    public async Task SaveReservationAsync()
+    {
+
+    }
+
+    private void Back()
+    {
+        NavigationManager.NavigateTo($"/books", false, false);
+    }
+}

@@ -1,10 +1,5 @@
 ﻿using DistributedLibrary.Data.Interfaces;
 using Microsoft.EntityFrameworkCore;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace DistributedLibrary.Data.Repositories;
 
@@ -17,9 +12,33 @@ public class UnitOfWork : IUnitOfWork
         _dbContext = dbContext;
     }
 
-    public virtual async Task<int> CommitAsync()
+    public virtual async Task<int> CommitAsync(string? userId)
     {
-         
-        return await _dbContext.SaveChangesAsync();
+        foreach (var added in GetAuditableEntities(EntityState.Added))
+        {
+            added.CreatedAt = DateTime.Now;
+            added.CreatedBy = userId;
+            added.UpdatedAt = DateTime.Now;
+            added.UpdatedBy = userId;
+        }
+
+        foreach (var updated in GetAuditableEntities(EntityState.Modified))
+        {
+            updated.UpdatedAt = DateTime.Now;
+            updated.UpdatedBy = userId;
+        }
+
+        var result = await _dbContext.SaveChangesAsync();
+
+        _dbContext.ChangeTracker.Clear();
+
+        return result;
+
+        IEnumerable<IAuditableEntity> GetAuditableEntities(EntityState state){
+
+            return _dbContext.ChangeTracker.Entries()
+                .Where(t => t.Entity is IAuditableEntity && t.State == state)
+                .Select(t => t.Entity).Cast<IAuditableEntity>();
+        }
     }
 }

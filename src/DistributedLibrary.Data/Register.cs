@@ -17,7 +17,7 @@ public static class Register
         services.AddDbContext<DistributedLibraryContext>((sp, x) =>
         {
             var connectionString = sp.GetRequiredService<IOptions<DatabaseConfiguration>>();
-
+            
             x.UseSqlServer(connectionString.Value.ConnectionString);
         });
     }

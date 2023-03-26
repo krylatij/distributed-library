@@ -7,6 +7,12 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <Compile Remove="Entities\EntityConfigurations\**" />
+    <EmbeddedResource Remove="Entities\EntityConfigurations\**" />
+    <None Remove="Entities\EntityConfigurations\**" />
+  </ItemGroup>
+
+  <ItemGroup>
     <PackageReference Include="Microsoft.AspNetCore.Identity.EntityFrameworkCore" Version="7.0.4" />
     <PackageReference Include="Microsoft.EntityFrameworkCore" Version="7.0.4" />
     <PackageReference Include="Microsoft.EntityFrameworkCore.Design" Version="7.0.4">
@@ -22,10 +28,6 @@
 
   <ItemGroup>
     <ProjectReference Include="..\DistributedLibrary.Shared\DistributedLibrary.Shared.csproj" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <Folder Include="Entities\EntityConfigurations\" />
   </ItemGroup>
 
 </Project>

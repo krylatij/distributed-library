@@ -1,0 +1,197 @@
+﻿@page "/reservations"
+@using DistributedLibrary.UI.Auth
+@using DistributedLibrary.Services.Services
+@using DistributedLibrary.Services.Dto
+@using GridBlazor
+@using GridBlazor.Pages
+@using DistributedLibrary.Data.Entities
+@using DistributedLibrary.Shared.Dto
+@using DistributedLibrary.Shared.Enums
+@using DocumentFormat.OpenXml.Office2010.Drawing
+@using GridShared
+@using GridShared.Sorting
+@using Microsoft.CodeAnalysis.CSharp.Syntax
+@inject UserInfoProvider _userInfoProvider
+@inject NavigationManager NavigationManager
+@inject GridService _gridService
+@inject LibraryService _libraryService
+@attribute [Authorize]
+
+
+<h3>Reservations</h3>
+
+@if (_books?.Length > 0)
+{
+    <EditForm Model="@_reservation" OnValidSubmit="@AddReservationAsync">
+        <DataAnnotationsValidator />
+        <ValidationSummary />
+
+        @if (_message != null)
+        {
+            <ul class="validation-errors">
+                <li class="validation-message">@_message</li>
+            </ul>
+        }
+
+        <div class="form-horizontal">
+            <div class="form-group">
+                <label for="BookId" class="control-label col-md-4">Book: </label>
+                <select id="BookId" name="BookId" class="form-control" @bind="_reservation.BookId">
+                    <option value="" selected="selected">-- select --</option>
+                    @foreach (var selectItem in _books)
+                    {
+                        <option value="@selectItem.BookId">@selectItem.Title</option>
+                    }
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label for="UserId" class="control-label col-md-2">User: </label>
+                <select id="UserId" name="UserId" class="form-control" @bind="_reservation.UserId">
+                    <option value="" selected="selected">-- select --</option>
+                    @foreach (var selectItem in _users)
+                    {
+                        if (selectItem.Id == _userId)
+                        {
+                            continue;
+                        }
+                        <option value="@selectItem.Id">@selectItem.UserName</option>
+                    }
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label for="ReservationDate" class="control-label col-md-2">ReservationDate Date: </label>
+                <div class="col-md-5">
+                    <InputDate id="ReservationDate" class="form-control" @bind-Value="_reservation.ReservationDate" />
+                </div>
+            </div>
+
+            <div class="form-group">
+                <div class="col-md-5">
+                    <input type="hidden" name="BookId" id="BookId" value="@_reservation.BookId" />
+                    <button type="submit" class="btn btn-primary btn-md">Save</button>
+                </div>
+            </div>
+        </div>
+    </EditForm>
+}
+else
+{
+    <p>No books to transfer. You can take one first.</p>
+}
+
+@if (_task?.IsCompleted == true)
+{
+    <h4>Reservations</h4>
+    <GridComponent T="ReservationEntity" Grid="@_reserveGrid"></GridComponent>
+}
+else
+{
+    <p><em>Loading...</em></p>
+}
+
+
+@code {
+    private string? _userId;
+    private string? _message;
+    private BookDto[] _books;
+    private ReservationDto _reservation;
+    private UserDto[] _users;
+
+    private CGrid<ReservationEntity> _reserveGrid;
+    private Task _task;
+
+    protected override async Task OnParametersSetAsync()
+    {
+        _userId = await _userInfoProvider.GetUserIdAsync();
+        _books = await _libraryService.GetBooksAsync(_userId);
+        _users = await _libraryService.GetUsersAsync();
+
+        _reservation = new ReservationDto
+        {
+            ReservationDate = DateTime.Now.AddDays(2)
+        };
+
+        Action<IGridColumnCollection<ReservationEntity>> reserveColumns = c =>
+        {
+            c.Add(o => o.ReservationId).Titled("Id").Sortable(true, GridSortMode.TwoState);
+            c.Add(o => o.Book.Title).Filterable(true);
+            c.Add(o => o.ReservationDate).Titled("Reservation Date").Filterable(true);
+            c.Add(o => o.CreatedByNavigation.UserName).Titled("Proposed By").Sortable(true);
+            c.Add(o => o.User.UserName).Titled("Proposed To").Sortable(true);
+            c.Add(o => o.CreatedAt).Titled("Created");
+            c.Add().RenderComponentAs<BookReserveComponent>(new List<Func<object, Task>>() { AcceptReservationAsync, DeclineReservationAsync, DeleteReservationAsync }, _userId);
+        };
+
+
+        var reserveClient = new GridClient<ReservationEntity>(q => _gridService.GetReservationsAsync(reserveColumns, q, _userId), new(), false, "reserveGrid", reserveColumns);
+        _reserveGrid = reserveClient.Grid;
+        
+        _task = reserveClient.UpdateGrid();
+        
+        await _task;
+
+    }
+
+    private async Task ProcessResponseAsync<T>(ResponseDto<T> response, Action<T?>? assignment = null) where T: class?
+    {
+        if (response.ResponseState != ResponseState.Ok)
+        {
+            _message = response.GetMessage();
+
+            assignment?.Invoke(null);
+            StateHasChanged();
+            return;
+        }
+
+        _message = null;
+        assignment?.Invoke(response.Result);
+        
+        await _reserveGrid.UpdateGrid();
+        StateHasChanged();
+    }
+
+    private async Task ProcessResponseAsync(ResponseDto response)
+    {
+        if (response.ResponseState != ResponseState.Ok)
+        {
+            _message = response.GetMessage();
+            StateHasChanged();
+            return;
+        }
+
+        _message = null;
+
+        await _reserveGrid.UpdateGrid();
+        StateHasChanged();
+    }
+
+    public async Task AddReservationAsync(object item)
+    {
+        var response = await _libraryService.AddReservationAsync(_reservation, _userId, "/reservations/");
+
+        await ProcessResponseAsync(response);
+    }
+
+    public async Task AcceptReservationAsync(object item)
+    {
+        var reservation = (ReservationEntity) item;
+        var response = await _libraryService.AcceptReservationAsync(reservation.ReservationId, _userId);
+        await ProcessResponseAsync(response);
+    }
+
+    public async Task DeclineReservationAsync(object item)
+    {
+        var reservation = (ReservationEntity) item;
+        var response = await _libraryService.DeclineReservationAsync(reservation.ReservationId, _userId);
+        await ProcessResponseAsync(response);
+    }
+
+    public async Task DeleteReservationAsync(object item)
+    {
+        var reservation = (ReservationEntity) item;
+        var response = await _libraryService.DeleteReservationAsync(reservation.ReservationId, _userId);
+        await ProcessResponseAsync(response);
+    }
+}

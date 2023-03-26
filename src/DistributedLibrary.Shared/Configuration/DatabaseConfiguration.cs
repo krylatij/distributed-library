@@ -1,5 +1,8 @@
-﻿namespace DistributedLibrary.Shared.Configuration;
+﻿using System.Diagnostics.CodeAnalysis;
 
+namespace DistributedLibrary.Shared.Configuration;
+
+[ExcludeFromCodeCoverage]
 public class DatabaseConfiguration
 {
     public const string SectionName = nameof(DatabaseConfiguration);

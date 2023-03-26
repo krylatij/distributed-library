@@ -1,0 +1,105 @@
+﻿@page "/user/{UserId}"
+@using DistributedLibrary.UI.Auth
+@using DistributedLibrary.Services.Services
+@using GridBlazor
+@using GridShared
+@using GridBlazor.Pages
+@using GridShared.Sorting
+@using GridShared.Utility
+@using Microsoft.Extensions.Primitives
+@using DistributedLibrary.Data.Entities
+@using DistributedLibrary.Services.Dto
+@inject UserInfoProvider _userInfoProvider
+@inject NavigationManager NavigationManager
+@inject GridService _gridService
+@inject LibraryService _libraryService
+
+<h3>Activity of '@_user?.UserName'.</h3>
+
+@if (_task?.IsCompleted == true)
+{
+    <h4>Contributions</h4>
+    <GridComponent T="BookEntity" Grid="@_bookGrid"></GridComponent>
+
+    <h4>Loans</h4>
+    <GridComponent T="LoanEntity" Grid="@_loanGrid"></GridComponent>
+
+    <h4>Reservations</h4>
+    <GridComponent T="ReservationEntity" Grid="@_reserveGrid"></GridComponent>
+
+}
+else
+{
+    <p><em>Loading...</em></p>
+}
+
+@code {
+
+    private string? _currentUserId = null;
+
+    private CGrid<BookEntity> _bookGrid;
+    private CGrid<LoanEntity> _loanGrid;
+    private CGrid<ReservationEntity> _reserveGrid;
+    private Task? _task;
+
+    [Parameter]
+    public string UserId { get; set; }
+
+    private UserDto? _user;
+
+    protected override async Task OnParametersSetAsync()
+    {
+        _user = await _libraryService.GetUserAsync(UserId);
+
+        if (_user == null)
+        {
+            NavigationManager.NavigateTo("/404/");
+            return;
+        }
+
+        _currentUserId = await _userInfoProvider.GetUserIdAsync();
+
+        var query = new QueryDictionary<StringValues>();
+
+        Action<IGridColumnCollection<BookEntity>> bookColumns = c =>
+        {
+            c.Add(o => o.BookId).Titled("Id").Sortable(true, GridSortMode.TwoState);
+            c.Add(o => o.Title).Filterable(true);
+            c.Add(o => o.CreatedAt).Filterable(true);
+            c.Add(o => o.Holder.UserName).Titled("Holder").Sortable(true);
+        };
+
+
+        var bookClient = new GridClient<BookEntity>(q => _gridService.GetBooksAsync(bookColumns, q, UserId), query, false, "bookGrid", bookColumns);
+        _bookGrid = bookClient.Grid;
+        await _bookGrid.UpdateGrid();
+
+        Action<IGridColumnCollection<LoanEntity>> loanColumns = c =>
+        {
+            c.Add(o => o.LoanId).Titled("Id").Sortable(true, GridSortMode.TwoState);
+            c.Add(o => o.Book.Title).Titled("Title").Filterable(true);
+            c.Add(o => o.DateFrom).Filterable(true);
+            c.Add(o => o.DateTo).Sortable(true);
+            c.Add(o => o.CreatedAt).Titled("Created");
+        };
+
+        var loanClient = new GridClient<LoanEntity>(q => _gridService.GetLoansAsync(loanColumns, q, UserId), query, false, "loanGrid", loanColumns);
+        _loanGrid = loanClient.Grid;
+        await loanClient.UpdateGrid();
+
+        Action<IGridColumnCollection<ReservationEntity>> reserveColumns = c =>
+        {
+            c.Add(o => o.ReservationId).Titled("Id").Sortable(true, GridSortMode.TwoState);
+            c.Add(o => o.Book.Title).Titled("Title").Filterable(true);
+            c.Add(o => o.ReservationDate).Filterable(true);
+            c.Add(o => o.CreatedByNavigation.UserName).Titled("Proposed By").Sortable(true);
+            c.Add(o => o.User.UserName).Titled("Proposed To").Sortable(true);
+            c.Add(o => o.CreatedAt).Titled("Created");
+        };
+
+        var reserveClient = new GridClient<ReservationEntity>(q => _gridService.GetReservationsAsync(reserveColumns, q, UserId), query, false, "reserveGrid", reserveColumns);
+        _reserveGrid = reserveClient.Grid;
+        _task = reserveClient.UpdateGrid();
+        await _task;
+    }
+}

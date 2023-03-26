@@ -42,8 +42,7 @@ public class ExceptionHandlingMiddleware
 
         _logger.LogError(exception, exception.Message);
 
-        var response = new ResponseDto<string>();
-        response.SetMessage("Internal Server errors. Check Logs!");
+        var response = ResponseDto.Error("Internal Server errors. Check Logs!");
         response.SetMessage(exception.Message);
 
         var result = JsonSerializer.Serialize(response, _serializerSettings);

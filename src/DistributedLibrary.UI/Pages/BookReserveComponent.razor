@@ -1,0 +1,45 @@
+﻿@using DistributedLibrary.Data.Entities
+@using DocumentFormat.OpenXml.Drawing.Charts
+@using GridBlazor
+@using GridShared.Columns
+@implements ICustomGridComponent<ReservationEntity>
+
+@if (Item.UserId == Object?.ToString())
+{
+    <button class='btn btn-sm btn-primary' @onclick="AcceptReserveAsync">Accept</button>
+    <button class='btn btn-sm btn-primary' @onclick="DeclineReserveAsync">Decline</button>
+}
+else
+{
+    <a href="" @onclick="@DeleteReserveAsync" @onclick:preventDefault>🗙</a>
+}
+
+@code {
+    [Parameter]
+    public ReservationEntity Item { get; set; }
+
+    [Parameter]
+    public CGrid<BookEntity> Grid { get; set; }
+
+    [Parameter]
+    public IList<Func<object,Task>> Functions { get; set; }
+
+    [Parameter]
+    public object? Object { get; set; }
+
+
+    private async Task AcceptReserveAsync(MouseEventArgs e)
+    {
+        await Functions[0]?.Invoke(Item);
+    }
+
+    private async Task DeclineReserveAsync(MouseEventArgs e)
+    {
+        await Functions[1]?.Invoke(Item);
+    }
+
+    private async Task DeleteReserveAsync(MouseEventArgs e)
+    {
+        await Functions[2]?.Invoke(Item);
+    }
+}

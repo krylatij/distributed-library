@@ -68,3 +68,11 @@ locals {
 
   mssql_enabled = length(local.mssql_dbs) > 0
 }
+
+locals {
+  communication_service_name = "acs-${local.project}"
+
+  communication_service_location = "United States"
+
+  communication_service_enabled = true
+}

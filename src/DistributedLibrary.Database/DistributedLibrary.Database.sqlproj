@@ -128,10 +128,6 @@
       <AnsiNulls>On</AnsiNulls>
       <QuotedIdentifier>On</QuotedIdentifier>
     </Build>
-    <Build Include="dbo\Tables\BookTag.sql">
-      <AnsiNulls>On</AnsiNulls>
-      <QuotedIdentifier>On</QuotedIdentifier>
-    </Build>
     <Build Include="dbo\Tables\Loan.sql">
       <AnsiNulls>On</AnsiNulls>
       <QuotedIdentifier>On</QuotedIdentifier>
@@ -165,6 +161,10 @@
       <QuotedIdentifier>On</QuotedIdentifier>
     </Build>
     <PostDeploy Include="PostDeploy\Seed.sql" />
+    <Build Include="dbo\Tables\Reservation.sql">
+      <AnsiNulls>On</AnsiNulls>
+      <QuotedIdentifier>On</QuotedIdentifier>
+    </Build>
   </ItemGroup>
   <ItemGroup>
     <None Include="DistributedLibrary.Database.publish.xml" />

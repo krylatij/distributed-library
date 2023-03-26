@@ -18,6 +18,10 @@ parameters:
 
   - name: run_tests
     type: boolean
+  - name: min_test_coverage
+    type: number
+    default: 5
+
   - name: deploy
     type: boolean
    
@@ -30,7 +34,7 @@ parameters:
     type: string
 
   - name: dotnet_sdk
-    type: string   
+    type: string
 
   - name: runtime_stack
     type: string
@@ -46,8 +50,10 @@ jobs:
     variables: 
       application_zipped: $(System.DefaultWorkingDirectory)/Publish/${{ variables.application }}
       ef_migrations_bundle_name: "efbundle-${{ parameters.application }}"
+      dotnet_test_arguments: "-v=n /p:CoverletOutput=$(System.DefaultWorkingDirectory)/TestResults/Coverage/Tests/ /p:CollectCoverage=true /p:threshold=${{ parameters.min_test_coverage }} /p:thresholdType=line /p:thresholdStat=total /p:CoverletOutputFormat=cobertura"
+      reportgenerator_data_file: "$(System.DefaultWorkingDirectory)/TestResults/Coverage/Tests/coverage.cobertura.xml"
 
-    steps:    
+    steps:
     - task: UseDotNet@2
       displayName: use .NET ${{ parameters.dotnet_sdk }}
       inputs:
@@ -80,8 +86,27 @@ jobs:
         command: test
         projects: ${{ parameters.test_project_path }}   
         packagesDirectory: ${{ parameters.nuget_packages_directory }}
+        arguments: ${{ variables.dotnet_test_arguments }}
         publishTestResults: true
       displayName: dotnet test
+
+    # - task: reportgenerator@4
+    #   condition: and(succeeded(), ${{ parameters.run_tests }})
+    #   inputs:
+    #     reports: ${{ variables.reportgenerator_data_file }}
+    #     targetdir: "$(System.DefaultWorkingDirectory)/TestResults"
+    #     reporttypes: "HtmlInline_AzurePipelines;Cobertura;"
+    #     verbosity: "Verbose" 
+    #   displayName: Generate Code Coverage Report
+
+    - task: PublishCodeCoverageResults@1
+      condition: and(succeeded(), ${{ parameters.run_tests }})
+      inputs:
+        codeCoverageTool: "Cobertura"
+        summaryFileLocation: "$(System.DefaultWorkingDirectory)/TestResults/Coverage/Tests/coverage.cobertura.xml"
+        pathToSources: "$(System.DefaultWorkingDirectory)"
+        reportDirectory: "$(System.DefaultWorkingDirectory)/TestResults"
+      displayName: publish coverage results
 
     - task: Bash@3
       continueOnError: false

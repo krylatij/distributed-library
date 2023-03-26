@@ -14,12 +14,24 @@
 @using DistributedLibrary.Services.Dto
 @using DistributedLibrary.Services.Services
 @using DistributedLibrary.Data.Entities
-@inject LibraryService libraryService
+@using DistributedLibrary.Shared.Dto
+@using DistributedLibrary.Shared.Enums
+@using DistributedLibrary.UI.Auth
+@inject UserInfoProvider _userInfoProvider
+@inject GridService _gridService
+@inject LibraryService _libraryService;
 @inject NavigationManager NavigationManager
 
 @if (_task.IsCompleted)
 {
     <button class='btn btn-sm btn-primary' @onclick="AddBook">Add new</button>
+
+    @if (_message != null)
+    {
+        <ul class="validation-errors">
+            <li class="validation-message">@_message</li>
+        </ul>
+    }
    
     <GridComponent T="BookEntity" Grid="@_grid"></GridComponent>
 }
@@ -33,8 +45,13 @@ else
     private CGrid<BookEntity> _grid;
     private Task _task;
 
+    private string? _userId;
+    private string? _message;
+
     protected override async Task OnParametersSetAsync()
     {
+        _userId = await _userInfoProvider.GetUserIdAsync();
+
         Action<IGridColumnCollection<BookEntity>> columns = c =>
         {
             c.Add(o => o.BookId).Titled("Id").Sortable(true, GridSortMode.TwoState);
@@ -42,20 +59,59 @@ else
             c.Add(o => o.Isbn).Filterable(true);
             c.Add(o => o.Author).Sortable(true);
             c.Add(o => o.Contributor.UserName).Titled("Contributor").Sortable(true);
-            c.Add().RenderComponentAs<BookDeleteRedirectComponent>();
+            c.Add(o => o.Holder.UserName).Titled("Holder").Sortable(true);
+            c.Add(o => o.CreatedAt).Titled("Created");
+            
+            if (_userId != null)
+            {
+                c.Add().Titled("Reserve/Release").RenderComponentAs<BookLoanComponent>(new List<Func<object, Task>>() { LoanBookAsync, ReturnBookAsync }, _userId);
+                c.Add().Titled("Delete").RenderComponentAs<BookDeleteRedirectComponent>();
+            }
+            
         };
 
         var query = new QueryDictionary<StringValues>();
-       //query.Add("grid-page", "2");
-
-
-        var client = new GridClient<BookEntity>(q => libraryService.GetBooksAsync(columns, q), query, false, "booksGrid2", columns);
+  
+        var client = new GridClient<BookEntity>(q => _gridService.GetBooksAsync(columns, q, null), query, false, "booksGrid", columns);
         _grid = client.Grid;
-    // Set new items to grid
+
         _task = client.UpdateGrid();
         
         await _task;
     }
+
+    private async Task LoanBookAsync(object bookItem)
+    {
+        var book = (BookEntity) bookItem;
+
+        var response = await _libraryService.LoanBookAsync(book.BookId, _userId);
+
+        await ProcessResponseAsync(response);
+    }
+
+    public async Task ReturnBookAsync(object bookItem)
+    {
+        var book = (BookEntity) bookItem;
+
+        var response = await _libraryService.ReturnBookAsync(book.BookId, _userId);
+
+        await ProcessResponseAsync(response);
+    }
+
+    private async Task ProcessResponseAsync(ResponseDto<LoanDto> response)
+    {
+        if (response.ResponseState != ResponseState.Ok)
+        {
+            _message = response.GetMessage();
+        }
+        else
+        {
+            _message = null;
+            await _grid.UpdateGrid();
+        }
+        StateHasChanged();
+    }
+
 
     private void AddBook()
     {

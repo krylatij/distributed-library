@@ -13,7 +13,8 @@ Post-Deployment Script Template
 --USER
 MERGE dbo.[AspNetUsers] AS Target USING (VALUES
 --
-('00000000-0000-0000-0000-000000000000', 'System', 'dev@null.com')
+('00000000-0000-0000-0000-000000000000', 'System', 'dev@null.com'),
+('11111111-0000-0000-0000-000000000000', 'Dummy User', 'dummy@user.com')
 ) AS Source (Id, UserName, Email)
 ON (Target.Id = Source.Id)
 WHEN MATCHED

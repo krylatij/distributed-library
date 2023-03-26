@@ -2,8 +2,9 @@
 @using DistributedLibrary.UI.Auth
 @using DistributedLibrary.Services.Services
 @using DistributedLibrary.Services.Dto
-@using DocumentFormat.OpenXml.Drawing.Charts
-@using Microsoft.CodeAnalysis.FlowAnalysis
+@using DistributedLibrary.Shared.Dto
+@using DistributedLibrary.Shared.Enums
+
 
 @inject UserInfoProvider _userInfoProvider
 @inject NavigationManager NavigationManager
@@ -17,6 +18,12 @@
 else
 {
     <div class="form-horizontal">
+        @if (_message != null)
+        {
+            <ul class="validation-errors">
+                <li class="validation-message">@_message</li>
+            </ul>
+        }
         <div class="form-group">
             <div class="col-md-5">Do you really want to delete book '@_book.Title'?</div>
         </div>
@@ -35,6 +42,8 @@ else
 @code {
     private BookDto? _book;
 
+    private string? _message;
+
     [Parameter]
     public int BookId { get; set; }
 
@@ -42,17 +51,56 @@ else
     public string Title { get; set; }
 
 
-    protected override async Task OnParametersSetAsync()    
+    protected override async Task OnParametersSetAsync()
     {
-        _book = (await _libraryService.GetBookAsync(BookId)).Result;
+        var response = await _libraryService.GetBookAsync(BookId);
+
+        ProcessResponse(response, x => _book = x);
     }
 
     private async Task DeleteAsync()
     {
-        await _libraryService.DeleteBookAsync(BookId);
-        Back();
+        var userId = await _userInfoProvider.GetUserIdAsync();
+        var response = await _libraryService.DeleteBookAsync(BookId, userId);
+
+        ProcessResponse(response);
+
+        if (response.ResponseState == ResponseState.Ok)
+        {
+            Back();
+        }
     }
 
+    private void ProcessResponse<T>(ResponseDto<T> response, Action<T?>? assignment = null) where T: class?
+    {
+        if (response.ResponseState != ResponseState.Ok)
+        {
+            _message = response.GetMessage();
+
+            assignment?.Invoke(null);
+            StateHasChanged();
+            return;
+        }
+
+        _message = null;
+        assignment?.Invoke(response.Result);
+     
+        StateHasChanged();
+    }
+
+
+    private void ProcessResponse(ResponseDto response)
+    {
+        if (response.ResponseState != ResponseState.Ok)
+        {
+            _message = response.GetMessage();
+            StateHasChanged();
+            return;
+        }
+
+        _message = null;
+        StateHasChanged();
+    }
 
     private void Back()
     {

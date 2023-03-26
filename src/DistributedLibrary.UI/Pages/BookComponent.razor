@@ -101,17 +101,11 @@ else
 
         var response = await _libraryService.GetBookAsync(BookId.Value);
 
-        if (response.ResponseState == ResponseState.Ok)
+        ProcessResponse(response);
+
+        if (_book == null)
         {
-            _message = null;
-            if (response.Result == null)
-            {
-                _message = $"Book was not found by id {BookId}";
-            }
-        }
-        else
-        {
-           ProcessResponse(response);
+            _message = $"Book was not found by id {BookId}";
         }
     }
 

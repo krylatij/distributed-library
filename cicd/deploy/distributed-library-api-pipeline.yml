@@ -31,6 +31,10 @@ parameters:
     default: true
     displayName: Run Tests
 
+  - name: min_test_coverage
+    type: number
+    default: 5
+
   - name: configuration
     type: string
     default: "Release"
@@ -85,15 +89,17 @@ jobs:
           -DatabaseConfiguration__ConnectionString "$(__mssql_backend_connection_string)"
           -RedisConfiguration__ConnectionString "<not set>"
           -ApplicationInsightsConfiguration__ConnectionString "$(__appinsights_connection_string)"
-          -NotificationsConfiguration__ConnectionString "$(__communication_service_connection_string)"
+          -CommunicationServiceConfiguration__ConnectionString "$(__communication_service_0_connection_string)"
           -Authentication__Google__ClientId "$(GoogleClientId)"
           -Authentication__Google__ClientSecret "$(GoogleClientSecret)"
+          -ApplicationConfiguration__Host "$(__webapp_ui_hostname)"
       ef_migrations_connection_string: ''
       service_connection: $(__service_endpoint_name)
       web_app_name: $(__webapp_ui)
       dotnet_sdk: ${{ parameters.dotnet_sdk }}
       configuration: ${{ parameters.configuration }}
       run_tests: ${{ parameters.run_tests }}
+      min_test_coverage: ${{ parameters.min_test_coverage }}
       deploy: ${{ parameters.deploy_ui }}
 
       

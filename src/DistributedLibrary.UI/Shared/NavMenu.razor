@@ -1,4 +1,7 @@
-﻿<div class="top-row ps-3 navbar navbar-dark">
+﻿@using DistributedLibrary.UI.Auth
+@inject UserInfoProvider _userInfoProvider
+
+<div class="top-row ps-3 navbar navbar-dark">
     <div class="container-fluid">
         <a class="navbar-brand" href="">DistributedLibrary.UI</a>
         <button title="Navigation menu" class="navbar-toggler" @onclick="ToggleNavMenu">
@@ -16,9 +19,22 @@
         </div>
         <div class="nav-item px-3">
             <NavLink class="nav-link" href="books">
-                <span class="oi oi-plus" aria-hidden="true"></span> Books
+                <span class="oi oi-book" aria-hidden="true"></span> Books
             </NavLink>
         </div>
+        <div class="nav-item px-3">
+            <NavLink class="nav-link" href="reservations">
+                <span class="oi oi-share-boxed" aria-hidden="true"></span> Reservations
+            </NavLink>
+        </div>
+        @if (_currentUserProfileLink != null)
+        {
+            <div class="nav-item px-3">
+                <NavLink class="nav-link" href="@_currentUserProfileLink">
+                    <span class="oi oi-person" aria-hidden="true"></span> Profile
+                </NavLink>
+            </div>
+        }
     </nav>
 </div>
 
@@ -27,8 +43,22 @@
 
     private string? NavMenuCssClass => collapseNavMenu ? "collapse" : null;
 
+    private string? _userId = null;
+
+    private string? _currentUserProfileLink = null;
+
     private void ToggleNavMenu()
     {
         collapseNavMenu = !collapseNavMenu;
+    }
+
+    protected override async Task OnParametersSetAsync()
+    {
+        _userId = await _userInfoProvider.GetUserIdAsync();
+
+        if (!string.IsNullOrEmpty(_userId))
+        {
+            _currentUserProfileLink = $"/user/{_userId}";
+        }
     }
 }

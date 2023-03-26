@@ -1,0 +1,43 @@
+﻿@using DistributedLibrary.Data.Entities
+@using DocumentFormat.OpenXml.Drawing.Charts
+@using GridBlazor
+@using GridShared.Columns
+@implements ICustomGridComponent<BookEntity>
+
+@if (Item.HolderId == null)
+{
+    <a href="" @onclick="@LoanBook" @onclick:preventDefault class="oi oi-cloud-download">  </a>
+}
+else
+{
+    if (Object != null && Item.HolderId == Object.ToString())
+    {
+        <a href="" @onclick="@ReleaseBook" @onclick:preventDefault class="oi oi-cloud-upload">  </a>
+    }
+}
+
+@code {
+    [Parameter]
+    public BookEntity Item { get; set; }
+
+    [Parameter]
+    public CGrid<BookEntity> Grid { get; set; }
+
+    [Parameter]
+    public IList<Func<object,Task>> Functions { get; set; }
+
+    [Parameter]
+    public object? Object { get; set; }
+
+
+    private async Task LoanBook(MouseEventArgs e)
+    {
+        await Functions[0]?.Invoke(Item);
+    }
+
+    private async Task ReleaseBook(MouseEventArgs e)
+    {
+        await Functions[1]?.Invoke(Item);
+    }
+
+}
