@@ -1,8 +1,6 @@
-﻿using System.Linq;
-using System.Security.Cryptography.X509Certificates;
-using DistributedLibrary.Data.Entities;
+﻿using DistributedLibrary.Data.Entities;
+using DistributedLibrary.Data.Interfaces;
 using DistributedLibrary.Data.Repositories;
-using DistributedLibrary.Services.Dto;
 using GridCore.Server;
 using GridShared;
 using GridShared.Utility;
@@ -13,11 +11,24 @@ namespace DistributedLibrary.Services.Services;
 
 public class GridService
 {
-    private readonly LibraryRepository _libraryRepository;
+    private readonly ILibraryRepository _libraryRepository;
    
-    public GridService(LibraryRepository libraryRepository)
+    public GridService(ILibraryRepository libraryRepository)
     {
         _libraryRepository = libraryRepository;
+    }
+
+    internal virtual IGridServer<T> GetServer<T>(IEnumerable<T> entities, 
+        QueryDictionary<StringValues> query, 
+        bool renderOnlyRows,
+        string gridName,
+        Action<IGridColumnCollection<T>> columns,
+        int pageSize)
+    {
+        return new GridCoreServer<T>(entities, query, renderOnlyRows, gridName, columns)
+            .WithPaging(pageSize)
+            .Sortable()
+            .Filterable(true);
     }
 
     public async Task<ItemsDTO<BookEntity>> GetBooksAsync(
@@ -25,14 +36,11 @@ public class GridService
         QueryDictionary<StringValues> query,
         string? userId)
     {
-        var server = new GridCoreServer<BookEntity>(
-                _libraryRepository.GetMany<BookEntity>(x => userId == null || x.ContributorId == userId)
-                    .Include(x => x.Holder)
-                    .Include(x => x.Contributor)
-                    .OrderByDescending(x => x.CreatedAt), query, false, "books", columns)
-            .WithPaging(Constants.GridPageSize)
-            .Sortable()
-            .Filterable(true);
+        var server = GetServer(_libraryRepository.GetMany<BookEntity>(x => userId == null || x.ContributorId == userId)
+                                .Include(x => x.Holder)
+                                .Include(x => x.Contributor)
+                                .OrderByDescending(x => x.CreatedAt),
+            query, false, "books", columns, Constants.GridPageSize);
 
         return await server.GetItemsToDisplayAsync(async x => await x.ToListAsync());
 
@@ -43,14 +51,11 @@ public class GridService
         QueryDictionary<StringValues> query,
         string? userId)
     {
-        var server = new GridCoreServer<LoanEntity>(
-                _libraryRepository.GetMany<LoanEntity>(x => userId == null || x.UserId == userId)
-                    .Include(x => x.Book)
-                    .OrderBy(x => x.DateTo)
-                    .ThenByDescending(x => x.DateFrom), query, false, "books", columns)
-            .WithPaging(Constants.GridPageSize)
-            .Sortable()
-            .Filterable(true);
+        var server = GetServer(
+            _libraryRepository.GetMany<LoanEntity>(x => userId == null || x.UserId == userId)
+                .Include(x => x.Book)
+                .OrderBy(x => x.DateTo)
+                .ThenByDescending(x => x.DateFrom), query, false, "loans", columns, Constants.GridPageSize);
 
         return await server.GetItemsToDisplayAsync(async x => await x.ToListAsync());
     }
@@ -60,15 +65,13 @@ public class GridService
         QueryDictionary<StringValues> query,
         string? userId)
     {
-        var server = new GridCoreServer<ReservationEntity>(
-                _libraryRepository.GetMany<ReservationEntity>(x => userId == null || (x.UserId == userId || x.CreatedBy == userId))
-                    .Include(x => x.User)
-                    .Include(x => x.CreatedByNavigation)
-                    .Include(x => x.Book)
-                .OrderByDescending(x => x.CreatedAt), query, false, "reservations", columns)
-            .WithPaging(Constants.GridPageSize)
-            .Sortable()
-            .Filterable(true);
+        var server = GetServer(
+            _libraryRepository
+                .GetMany<ReservationEntity>(x => userId == null || (x.UserId == userId || x.CreatedBy == userId))
+                .Include(x => x.User)
+                .Include(x => x.CreatedByNavigation)
+                .Include(x => x.Book)
+                .OrderByDescending(x => x.CreatedAt), query, false, "reservations", columns, Constants.GridPageSize);
 
         return await server.GetItemsToDisplayAsync(async x => await x.ToListAsync());
     }

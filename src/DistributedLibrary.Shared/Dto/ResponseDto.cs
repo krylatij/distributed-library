@@ -1,10 +1,5 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Diagnostics.CodeAnalysis;
-using System.Linq;
-using System.Text;
+﻿using System.Diagnostics.CodeAnalysis;
 using System.Text.Json.Serialization;
-using System.Threading.Tasks;
 using DistributedLibrary.Shared.Enums;
 
 namespace DistributedLibrary.Shared.Dto;
@@ -20,6 +15,7 @@ public class ResponseDto<T> : ResponseDto
     public T Result { get; set; } = default!;
 }
 
+[ExcludeFromCodeCoverage]
 public class ResponseDto
 {
     protected ResponseDto(ResponseState responseState, string? message = null)

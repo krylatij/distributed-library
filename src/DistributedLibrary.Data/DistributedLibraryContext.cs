@@ -1,9 +1,11 @@
-﻿using DistributedLibrary.Data.Entities;
+﻿using System.Diagnostics.CodeAnalysis;
+using DistributedLibrary.Data.Entities;
 using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
 
 namespace DistributedLibrary.Data;
 
+[ExcludeFromCodeCoverage]
 public partial class DistributedLibraryContext : IdentityDbContext<User>
 {
     public DistributedLibraryContext()

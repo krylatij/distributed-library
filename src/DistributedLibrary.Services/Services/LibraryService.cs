@@ -6,7 +6,6 @@ using DistributedLibrary.Services.Dto;
 using DistributedLibrary.Shared.Configuration;
 using DistributedLibrary.Shared.Dto;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.EntityFrameworkCore.Internal;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 
@@ -14,14 +13,14 @@ namespace DistributedLibrary.Services.Services;
 
 public class LibraryService
 {
-    private readonly LibraryRepository _libraryRepository;
+    private readonly ILibraryRepository _libraryRepository;
     private readonly NotificationService _notificationService;
     private readonly IOptions<ApplicationConfiguration> _configuration;
     private readonly IUnitOfWork _unitOfWork;
     private readonly IMapper _mapper;
 
     public LibraryService(ILogger<LibraryService> logger,
-        LibraryRepository libraryRepository,
+        ILibraryRepository libraryRepository,
         NotificationService notificationService,
         IOptions<ApplicationConfiguration> configuration,
         IUnitOfWork unitOfWork,
@@ -102,7 +101,8 @@ public class LibraryService
 
         return ResponseDto.Ok();
     }
-    public async Task<UserDto?> GetUserAsync(string? userId)
+
+    public async Task<UserDto?> GetUserAsync(string userId)
     {
         var entity = await _libraryRepository.GetAsync<User>(x => x.Id == userId);
 

@@ -1,13 +1,9 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+﻿using System.Diagnostics.CodeAnalysis;
 
-namespace DistributedLibrary.Services
+namespace DistributedLibrary.Services;
+
+[ExcludeFromCodeCoverage]
+public static class Constants
 {
-    public static class Constants
-    {
-        public const int GridPageSize = 10;
-    }
+    public const int GridPageSize = 10;
 }

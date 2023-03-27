@@ -1,13 +1,10 @@
-﻿using System;
-using System.Collections.Generic;
-using System.ComponentModel.DataAnnotations;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+﻿using System.ComponentModel.DataAnnotations;
+using System.Diagnostics.CodeAnalysis;
 using DistributedLibrary.Data.Validation;
 
 namespace DistributedLibrary.Services.Dto;
 
+[ExcludeFromCodeCoverage]
 public class BookDto
 {
     public int BookId { get; set; }

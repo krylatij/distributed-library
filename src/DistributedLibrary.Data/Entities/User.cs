@@ -1,7 +1,9 @@
 ﻿using Microsoft.AspNetCore.Identity;
+using System.Diagnostics.CodeAnalysis;
 
 namespace DistributedLibrary.Data.Entities;
 
+[ExcludeFromCodeCoverage]
 public partial class User : IdentityUser
 {
     public virtual ICollection<BookEntity> BookContributors { get; } = new List<BookEntity>();

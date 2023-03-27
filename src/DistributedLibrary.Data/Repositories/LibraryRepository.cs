@@ -1,10 +1,15 @@
-﻿using System.Linq.Expressions;
+﻿using System.Diagnostics.CodeAnalysis;
+using System.Linq.Expressions;
+using DistributedLibrary.Data.Interfaces;
 using Microsoft.EntityFrameworkCore;
 
 namespace DistributedLibrary.Data.Repositories;
 
-public class LibraryRepository
+[ExcludeFromCodeCoverage]
+public class LibraryRepository : ILibraryRepository
 {
+    private bool _disposed = false;
+
     private readonly DistributedLibraryContext _dbContext;
 
     public LibraryRepository(DistributedLibraryContext dbContext)
@@ -85,5 +90,24 @@ public class LibraryRepository
 
         return await _dbContext.Set<T>().AsNoTracking().Include(include1).Include(include2).SingleOrDefaultAsync(predicate);
     }
+
+    public void Dispose()
+    {
+        Dispose(true);
+        GC.SuppressFinalize(this);
+    }
+
+    protected virtual void Dispose(bool disposing)
+    {
+        if (!_disposed)
+        {
+            if (disposing)
+            {
+                _dbContext.Dispose();
+            }
+            _disposed = true;
+        }
+    }
+
 
 }

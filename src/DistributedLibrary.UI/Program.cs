@@ -1,3 +1,4 @@
+using System.Diagnostics.CodeAnalysis;
 using DistributedLibrary.Data;
 using DistributedLibrary.Data.Entities;
 using DistributedLibrary.Services;
@@ -9,7 +10,7 @@ using Microsoft.AspNetCore.SignalR;
 
 var builder = WebApplication.CreateBuilder(args);
 
-builder.Services.AddDefaultIdentity<User>(options => options.SignIn.RequireConfirmedAccount = true).AddEntityFrameworkStores<DistributedLibraryContext>();
+builder.Services.AddDefaultIdentity<User>(options => options.SignIn.RequireConfirmedAccount = false).AddEntityFrameworkStores<DistributedLibraryContext>();
 
 builder.Services.AddHttpClient();
 builder.Services.AddScoped<TokenProvider>();
@@ -90,3 +91,8 @@ app.MapFallbackToPage("/_Host");
 app.MapRazorPages();
 
 app.Run();
+
+[ExcludeFromCodeCoverage]
+public partial class Program
+{
+}

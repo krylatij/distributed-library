@@ -1,10 +1,12 @@
-﻿namespace DistributedLibrary.UI.Auth
-{
-    public class TokenProvider
-    {
-        public string? AccessToken { get; set; }
-        public string? RefreshToken { get; set; }
+﻿using System.Diagnostics.CodeAnalysis;
 
-        public string? XsrfToken { get; set; }
-    }
+namespace DistributedLibrary.UI.Auth;
+
+[ExcludeFromCodeCoverage]
+public class TokenProvider
+{
+    public string? AccessToken { get; set; }
+    public string? RefreshToken { get; set; }
+
+    public string? XsrfToken { get; set; }
 }

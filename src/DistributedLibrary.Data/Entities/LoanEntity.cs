@@ -1,7 +1,9 @@
 ﻿using DistributedLibrary.Data.Interfaces;
+using System.Diagnostics.CodeAnalysis;
 
 namespace DistributedLibrary.Data.Entities;
 
+[ExcludeFromCodeCoverage]
 public partial class LoanEntity : IAuditableEntity
 {
     public int LoanId { get; set; }

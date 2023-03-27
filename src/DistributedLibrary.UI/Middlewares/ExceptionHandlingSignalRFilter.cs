@@ -1,29 +1,28 @@
 ﻿using Microsoft.AspNetCore.SignalR;
 
-namespace DistributedLibrary.UI.Middlewares
+namespace DistributedLibrary.UI.Middlewares;
+
+public class ExceptionHandlingSignalRFilter : IHubFilter
 {
-    public class ExceptionHandlingSignalRFilter : IHubFilter
+    private readonly ILogger<ExceptionHandlingSignalRFilter> _logger;
+
+    public ExceptionHandlingSignalRFilter(ILogger<ExceptionHandlingSignalRFilter> logger)
     {
-        private readonly ILogger<ExceptionHandlingSignalRFilter> _logger;
+        _logger = logger;
+    }
 
-        public ExceptionHandlingSignalRFilter(ILogger<ExceptionHandlingSignalRFilter> logger)
+    public async ValueTask<object> InvokeMethodAsync(
+        HubInvocationContext invocationContext, 
+        Func<HubInvocationContext, ValueTask<object>> next)
+    {
+        try
         {
-            _logger = logger;
+            return await next(invocationContext);
         }
-
-        public async ValueTask<object> InvokeMethodAsync(
-            HubInvocationContext invocationContext, 
-            Func<HubInvocationContext, ValueTask<object>> next)
+        catch (Exception ex)
         {
-            try
-            {
-                return await next(invocationContext);
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "unhandled exception in SignalR");
-                throw;
-            }
+            _logger.LogError(ex, "unhandled exception in SignalR");
+            throw;
         }
     }
 }

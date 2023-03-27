@@ -1,11 +1,8 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+﻿using System.Diagnostics.CodeAnalysis;
 
 namespace DistributedLibrary.Services.Dto;
 
+[ExcludeFromCodeCoverage]
 public class LoanDto
 {
     public int LoanId { get; set; }

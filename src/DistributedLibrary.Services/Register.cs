@@ -5,9 +5,11 @@ using DistributedLibrary.Services.Services;
 using DistributedLibrary.Shared.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Options;
+using System.Diagnostics.CodeAnalysis;
 
 namespace DistributedLibrary.Services;
 
+[ExcludeFromCodeCoverage]
 public static class Register
 {
     public static void AddDistributedLibraryServices(this IServiceCollection services)

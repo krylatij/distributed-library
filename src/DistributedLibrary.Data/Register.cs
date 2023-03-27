@@ -4,14 +4,16 @@ using DistributedLibrary.Shared.Configuration;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Options;
+using System.Diagnostics.CodeAnalysis;
 
 namespace DistributedLibrary.Data;
 
+[ExcludeFromCodeCoverage]
 public static class Register
 {
     public static void AddDistributedLibraryData(this IServiceCollection services)
     {
-        services.AddTransient<LibraryRepository>();
+        services.AddTransient<ILibraryRepository, LibraryRepository>();
         services.AddTransient<IUnitOfWork, UnitOfWork>();
 
         services.AddDbContext<DistributedLibraryContext>((sp, x) =>

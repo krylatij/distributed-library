@@ -1,9 +1,11 @@
 ﻿using AutoMapper;
 using DistributedLibrary.Data.Entities;
 using DistributedLibrary.Services.Dto;
+using System.Diagnostics.CodeAnalysis;
 
 namespace DistributedLibrary.Services.Mapping;
 
+[ExcludeFromCodeCoverage]
 public class AutomapperProfile : Profile
 {
     public AutomapperProfile()

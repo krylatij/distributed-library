@@ -1,29 +1,28 @@
 ﻿using System.Security.Claims;
 using Microsoft.AspNetCore.Components.Authorization;
 
-namespace DistributedLibrary.UI.Auth
+namespace DistributedLibrary.UI.Auth;
+
+public class UserInfoProvider
 {
-    public class UserInfoProvider
+    private readonly AuthenticationStateProvider _authenticationStateProvider;
+
+    public UserInfoProvider(AuthenticationStateProvider authenticationStateProvider)
     {
-        private readonly AuthenticationStateProvider _authenticationStateProvider;
+        _authenticationStateProvider = authenticationStateProvider;
+    }
 
-        public UserInfoProvider(AuthenticationStateProvider authenticationStateProvider)
+    public async Task<string?> GetUserIdAsync()
+    {
+        var state = await _authenticationStateProvider.GetAuthenticationStateAsync();
+
+        var userClaim = state.User.Claims.FirstOrDefault(x => x.Type == ClaimTypes.NameIdentifier);
+
+        if (userClaim == null)
         {
-            _authenticationStateProvider = authenticationStateProvider;
+            return null;
         }
 
-        public async Task<string> GetUserIdAsync()
-        {
-            var state = await _authenticationStateProvider.GetAuthenticationStateAsync();
-
-            var userClaim = state.User.Claims.FirstOrDefault(x => x.Type == ClaimTypes.NameIdentifier);
-
-            if (userClaim == null)
-            {
-                throw new InvalidOperationException("User id claim is not found");
-            }
-
-            return userClaim.Value;
-        }
+        return userClaim.Value;
     }
 }

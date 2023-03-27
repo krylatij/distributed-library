@@ -1,5 +1,8 @@
-﻿namespace DistributedLibrary.Services.Dto;
+﻿using System.Diagnostics.CodeAnalysis;
 
+namespace DistributedLibrary.Services.Dto;
+
+[ExcludeFromCodeCoverage]
 public class UserDto
 {
     public string Id { get; set; }
